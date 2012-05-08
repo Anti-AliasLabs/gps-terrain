@@ -70,6 +70,7 @@ class TerrainGenerator {
 
   // draws the terrain
   void display() {
+    fill(223, 0, 255);
     destabilise();
     if (framesPassed > 10) {
       createTerrain();
