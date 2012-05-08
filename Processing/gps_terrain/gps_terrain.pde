@@ -120,11 +120,11 @@ void draw() {
 
   background(128, 128, 128);
 
-  // setup lights
-  updateLights(12, 0);
-
   fill(168, 168, 168);
   noStroke();
+  
+  // setup lights
+  updateLights(12, 0);
 
   beginCamera();
   camera();
@@ -139,6 +139,10 @@ void draw() {
 
   // HUD
   cam.beginHUD();
+  
+  // setup lights
+  updateHUDLights();
+  
   // raw data feeds
 
   // label boxes
@@ -281,22 +285,28 @@ void updateTerrain() {
 //--------------------------------------------------
 // function for lighting
 //--------------------------------------------------
+void updateHUDLights() {
+  //spotLight(20, 20, 20, 1000.0, 1000.0, 1000.0, 0, 1, 0, PI/2, 2);
+  directionalLight(100, 100, 100, 0.5f, 500.19f, 0.5f);
+}
+
 void updateLights(int currHour, int currMin) {
   // June sunrise 5:00
   // June sunset 9:30
-  int ambLevel;
+  int ambLevel = 150;
   float spotX;
   if (currHour<14) {
-    ambLevel = 10 + currHour*10;
+    //ambLevel = 10 + currHour*10;
     spotX = -100 + currHour*100.0;
   }
   else {
-    ambLevel = 10 + (23-currHour)*10;
+    //ambLevel = 10 + (23-currHour)*10;
     spotX = -100 + (23-currHour)*100.0;
   }
 
-  ambientLight(ambLevel, ambLevel/2, ambLevel);
-  spotLight(223, 0, 255, -spotX, 5000.0, 1000.0, -1, 1, 0, PI/2, 2);
+  //ambientLight(ambLevel, ambLevel/2, ambLevel);
+  //spotLight(123, 0, 155, -spotX, 500.0, 1000.0, -1, 1, 0, PI/4, 2);
+  directionalLight(200, 200, 200, 0.5f, -0.1f, 0.5f);
 }
 
 //--------------------------------------------------
