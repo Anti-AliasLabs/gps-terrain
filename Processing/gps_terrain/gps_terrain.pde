@@ -8,7 +8,9 @@
 
 import processing.dxf.*;
 import processing.serial.*;
+import peasy.*;
 
+PeasyCam cam;
 
 Serial myPort;                   // The serial port
 GpsParser gpsParser;
@@ -43,6 +45,12 @@ int framesPassed = 0;
 //--------------------------------------------------
 void setup() {
   size(1440, 900, OPENGL);
+
+  // set up camera
+  cam = new PeasyCam(this, 100);
+  cam.setMinimumDistance(50);
+  cam.setMaximumDistance(500);
+
   // create terrain & generate elevation data
   terrain = new TerrainGenerator(j, s);
 
@@ -59,7 +67,7 @@ void setup() {
 
   // set up the font
   myFont = loadFont("AndaleMono-36.vlw"); 
-  textFont(myFont, 30);
+  textFont(myFont, 18);
 }
 
 //--------------------------------------------------
@@ -91,46 +99,47 @@ void draw() {
   // draw mesh
   terrain.display();
 
-
-  pushMatrix();
-
-  translate(longT, -1000, latT);
-  rotateX(-camRotate);
+  // HUD
+  cam.beginHUD();
   // raw data feeds
 
   // label boxes
   fill(255);
-  int rh = 40;
+  int rh = 20;
   for (int i=0; i<4; i++) {
-    rect(47, 69 + i*50, 242, rh); // sat
-    rect(297, 69 + i*50, 135, rh); //hdop
-    rect(447, 69 + i*50, 210, rh); // lat
-    rect(677, 69 + i*50, 225, rh); //long
-    rect(927, 69 + i*50, 210, rh); //alt
-    rect(1147, 69 + i* 50, 190, rh); // fix
+    rect(47, 53 + i*30, 150, rh); // sat
+    rect(217, 53 + i*30, 85, rh); //hdop
+    rect(377, 53 + i*30, 130, rh); // lat
+    rect(527, 53 + i*30, 140, rh); //long
+    rect(747, 53 + i*30, 130, rh); //alt
+    rect(897, 53 + i*30, 120, rh); // fix
   }
-  rect(47, 670, 390, rh*2.3); // date and time
+  rect(1197, 53, 180, rh); // date and time
+  rect(1197, 83, 180, rh);
 
-
-
+  rect(47, 764, 250, rh); // title
+  rect(47, 794, 360, rh);
 
   fill(0);
-  text("SATELLITES //", 50, 100);
-  text("HDOP //", 300, 100);
-  text("LATITUDE //", 450, 100);
-  text("LONGITUDE //", 680, 100);
-  text("ALTITUDE //", 930, 100);
-  text("FIX AGE //", 1150, 100);
+  text("SATELLITES //", 50, 70);
+  text("HDOP //", 220, 70);
+  text("LATITUDE //", 380, 70);
+  text("LONGITUDE //", 530, 70);
+  text("ALTITUDE //", 750, 70);
+  text("FIX AGE //", 900, 70);
+
+  text("UNSTABLE LANSCAPES //", 50, 780);
+  text("GPS MODULE // POLSTAR PMB-648 //", 50, 810);
 
   for (int i=0; i<3; i++) {
-    text(sats[i], 50, 150 + i*50);
-    text(hdops[i], 300, 150 + i*50);
+    text(sats[i], 50, 100 + i*30);
+    text(hdops[i], 220, 100 + i*30);
   }
 
-  text("DATE //", 50, 700);
-  text("TIME //", 50, 750);
+  text("DATE //", 1200, 70);
+  text("TIME //", 1200, 100);
 
-  popMatrix();
+  cam.endHUD();
 
 
   if (record) {
