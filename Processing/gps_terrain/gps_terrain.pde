@@ -9,6 +9,12 @@
 import processing.dxf.*;
 import processing.serial.*;
 import peasy.*;
+import ddf.minim.*;
+
+Minim minim;
+AudioPlayer bgSound;
+AudioPlayer radioStatic;
+AudioPlayer beep;
 
 PeasyCam cam;
 
@@ -58,6 +64,19 @@ int framesPassed = 0;
 //--------------------------------------------------
 void setup() {
   size(1440, 900, OPENGL);
+  // set up audio
+  minim = new Minim(this);
+  bgSound = minim.loadFile("KOSMO_376_700%_FILM SCORE.mp3");
+  bgSound.loop();
+
+  // if satellites are 0, loop radio static
+  radioStatic = minim.loadFile("RADIO STATIC_GLITCH START_FOR FILM.mp3");
+
+  // volume controlled by fix age
+  beep = minim.loadFile("SATELLITE_BLEEP.mp3");
+  beep.setGain(-100.0);
+  println(beep.getControls());
+  //beep.loop();
 
   // set up camera
   cam = new PeasyCam(this, 100);
@@ -96,7 +115,7 @@ void setup() {
   days = 0;
   months = 0;
   years = 0;
-  
+
   for ( int i=0; i<3; i++) {
     sats[i] = 0;
     hdops[i] = 0;
@@ -122,7 +141,7 @@ void draw() {
 
   fill(168, 168, 168);
   noStroke();
-  
+
   // setup lights
   updateLights(12, 0);
 
@@ -137,15 +156,17 @@ void draw() {
   updateTerrain();
   terrain.display();
 
+
+
   // HUD
   cam.beginHUD();
-  
+
   // setup lights
   updateHUDLights();
-  
+
   // raw data feeds
 
-  // label boxes
+    // label boxes
   fill(255);
   int rh = 20;
   for (int i=0; i<4; i++) {
@@ -176,10 +197,10 @@ void draw() {
   for (int i=0; i<3; i++) {
     text(sats[i], 50, 100 + i*30);
     text(hdops[i], 220, 100 + i*30);
-    
+
     String lt = nfs(lats[i], 2, 5);
     String ln = nfs(longs[i], 1, 5);
-    
+
     text(lt, 371, 100 + i*30);
     text(ln, 530, 100 + i*30);
     text(altitudes[i], 750, 100 + i*30);
@@ -188,19 +209,22 @@ void draw() {
 
   text("DATE //", 1200, 70);
   String d = days + "/" + months + "/" + years;
-  text(d, 1290, 70);
-  
+  text(d, 1282, 70);
+
   String h, m, s;
-  if( hours < 10) {
+  if ( hours < 10) {
     h = "0" + hours + ":";
-  } else h = hours + ":";
-  if( mins < 10) {
+  } 
+  else h = hours + ":";
+  if ( mins < 10) {
     m = "0" + mins + ":";
-  } else m = mins + ":";
-  if( secs < 10) {
+  } 
+  else m = mins + ":";
+  if ( secs < 10) {
     s = "0" + secs;
-  } else s = secs + " ";
-  
+  } 
+  else s = secs + " ";
+
   String t = h + m  + s;
   text(t, 1290, 100);
   text("TIME //", 1200, 100);
@@ -230,19 +254,24 @@ void updateGpsValues() {
     longs[i] = longs[i-1];
     altitudes[i] = altitudes[i-1];
   }
-  
+
   sats[0] = gpsParser.getSatellites();
+  if( sats[0] < 1) {
+    startStatic();
+  } else {stopStatic();}
+  
   hdops[0] = gpsParser.getHDOP();
   fixes[0] = gpsParser.getFixAge();
-  
+  adjustBeep(fixes[0]);
+
   lats[0] = gpsParser.getLatitude();
   longs[0] = gpsParser.getLongitude();
   altitudes[0] = gpsParser.getAltitude();
-  
+
   hours = (gpsParser.getHour() + 1)%24;
   mins = gpsParser.getMinute();
   secs = gpsParser.getSeconds();
-  
+
   days = gpsParser.getDay();
   months = gpsParser.getMonth();
   years = gpsParser.getYear();
@@ -252,34 +281,63 @@ void updateTerrain() {
   // jaggedness affected by HDOP
   // 100-150 almost flat terrain 0.01
   j = map(hdops[0], 100, 5000, 0.01, 0.9);
-  if(hdops[0] == 0)
+  if (hdops[0] == 0)
     j = 1.0;
   terrain.updateJaggedness(j);
-  
+
   // stability affected by satellites
-  if( sats[0] > 0 ){
+  if ( sats[0] > 0 ) {
     s = 50/sats[0];
   }
   else {
     s = 100.0;
   }
-  if( s != prev_s ) {
-    terrain.updateStability(s); 
+  if ( s != prev_s ) {
+    terrain.updateStability(s);
   }
   prev_s = s;
-  
+
   // lat and long affect camera view
   /*
   moveLR =  0.0 - longs[0] - prev_moveLR;
-  moveCameraLeft(moveLR*10000);
-  println("------moveLR: " + moveLR*100000.0);
-  prev_moveLR = moveLR;
-  
-  moveFB =  (51.0 - lats[0] - prev_moveFB)*100000.;
-  moveCameraForward( moveFB);
-  println("------moveFB: " + moveFB);
-  prev_moveFB = moveFB;
-  */
+   moveCameraLeft(moveLR*10000);
+   println("------moveLR: " + moveLR*100000.0);
+   prev_moveLR = moveLR;
+   
+   moveFB =  (51.0 - lats[0] - prev_moveFB)*100000.;
+   moveCameraForward( moveFB);
+   println("------moveFB: " + moveFB);
+   prev_moveFB = moveFB;
+   */
+}
+
+//--------------------------------------------------
+// function for sounds
+//--------------------------------------------------
+void adjustBeep(int fixAge) {
+  // fix age of 0 is gain of -100.0
+  // fix age of >1000 is gain of 0.0
+  float g;
+  g = fixAge/-5 - 100.0; // adjust the volume
+  if(g > 0.0) {
+    g = 0.0;
+  }
+  println("---fa is: " + fixAge + " beep gain is: " + g);
+  beep.setGain(g);
+}
+
+void startStatic() {
+  if( !radioStatic.isPlaying())
+  println("----starting static");
+    radioStatic.loop();
+}
+
+void stopStatic() {
+  if( radioStatic.isPlaying()){
+    println("----stoping static");
+    radioStatic.pause();
+    radioStatic.rewind();
+  }
 }
 
 //--------------------------------------------------
@@ -287,48 +345,49 @@ void updateTerrain() {
 //--------------------------------------------------
 void updateHUDLights() {
   //spotLight(20, 20, 20, 1000.0, 1000.0, 1000.0, 0, 1, 0, PI/2, 2);
-  directionalLight(100, 100, 100, 0.5f, 500.19f, 0.5f);
+  directionalLight(100, 100, 100, 0, 1, 1);
 }
 
 void updateLights(int currHour, int currMin) {
   // June sunrise 5:00
   // June sunset 9:30
-  int ambLevel = 150;
+  int ambLevel;
   float spotX;
   if (currHour<14) {
-    //ambLevel = 10 + currHour*10;
+    ambLevel = 10 + currHour*10;
     spotX = -100 + currHour*100.0;
   }
   else {
-    //ambLevel = 10 + (23-currHour)*10;
+    ambLevel = 10 + (23-currHour)*10;
     spotX = -100 + (23-currHour)*100.0;
   }
 
   //ambientLight(ambLevel, ambLevel/2, ambLevel);
-  //spotLight(123, 0, 155, -spotX, 500.0, 1000.0, -1, 1, 0, PI/4, 2);
-  directionalLight(200, 200, 200, 0.5f, -0.1f, 0.5f);
+  ambientLight(200, 255, 255);
+  spotLight(123, 0, 155, -spotX, 5000.0, 1000.0, -1, 1, 0, PI/2, 2);
+  //directionalLight(200, 200, 200, 0.5f, -0.1f, 0.5f);
 }
 
 //--------------------------------------------------
 // functions for moving the camera
 //--------------------------------------------------
 void moveCameraLeft(float amount) {
-  if(abs(amount) < 10)
+  if (abs(amount) < 10)
     longT += amount;
 }
 //--------------------------------------------------
 void moveCameraRight(float amount) {
-  if(abs(amount) < 10)
+  if (abs(amount) < 10)
     longT -= amount;
 }
 //--------------------------------------------------
 void moveCameraForward(float amount) {
-  if(abs(amount) < 10)
+  if (abs(amount) < 10)
     latT += amount;
 }
 //--------------------------------------------------
 void moveCameraBackward(float amount) {
-  if(abs(amount) < 10)
+  if (abs(amount) < 10)
     latT -= amount;
 }
 
@@ -389,5 +448,21 @@ int h = 0;
 void mouseReleased() {
   h+=1; 
   h = h%24;
+}
+
+//--------------------------------------------------
+// stop - clean up audio objects
+//--------------------------------------------------
+void stop()
+{
+  // always close Minim audio classes when you are finished with them
+  bgSound.close();
+  radioStatic.close();
+  beep.close();
+
+  // always stop Minim before exiting
+  minim.stop();
+  // this closes the sketch
+  super.stop();
 }
 
