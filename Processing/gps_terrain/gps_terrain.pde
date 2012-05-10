@@ -76,7 +76,7 @@ void setup() {
   beep = minim.loadFile("SATELLITE_BLEEP.mp3");
   beep.setGain(-100.0);
   println(beep.getControls());
-  //beep.loop();
+  beep.loop();
 
   // set up camera
   cam = new PeasyCam(this, 100);
@@ -318,7 +318,13 @@ void adjustBeep(int fixAge) {
   // fix age of 0 is gain of -100.0
   // fix age of >1000 is gain of 0.0
   float g;
-  g = fixAge/-5 - 100.0; // adjust the volume
+  if( fixAge < 1) {
+    g = -150.0;
+  } else {
+    //g = fixAge/-5 - 100.0; // adjust the volume
+    g = -400.0/fixAge;
+  }
+  // limit loudness so it doesn't distort
   if(g > 0.0) {
     g = 0.0;
   }
