@@ -8,7 +8,7 @@
 */
 
 TinyGPS gps;
-SoftwareSerial nss(2, 3);
+SoftwareSerial nss(3, 2);
 
 static void gpsdump(TinyGPS &gps);
 static bool feedgps();
@@ -20,7 +20,7 @@ static void print_str(const char *str, int len);
 void setup()
 {
   Serial.begin(9600);
-  nss.begin(4800);
+  nss.begin(9600);
   /*
   Serial.print("Testing TinyGPS library v. "); Serial.println(TinyGPS::library_version());
   Serial.println("by Mikal Hart");
