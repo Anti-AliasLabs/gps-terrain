@@ -93,9 +93,10 @@ void setup() {
   gfx = new ToxiclibsSupport(this);
 
 
-  String portName = Serial.list()[0];
+  String portName = Serial.list()[2]; // change the number in [] to correct port
   myPort = new Serial(this, portName, 9600);
   gpsParser = new GpsParser(myPort);
+  println("listening to port " + portName);
 
   // set up the font
   myFont = loadFont("AndaleMono-36.vlw"); 
