@@ -2,10 +2,11 @@
 
 #include <TinyGPS.h>
 
-/* This sample code demonstrates the normal use of a TinyGPS object.
-   It requires the use of SoftwareSerial, and assumes that you have a
-   4800-baud serial GPS device hooked up on pins 3(rx) and 4(tx).
-*/
+// Wiring:
+// Connect the GPS Power pin to 5V
+// Connect the GPS Ground pin to ground
+// Connect the GPS TX (transmit) pin to Digital 3
+// Connect the GPS RX (receive) pin to Digital 2
 
 TinyGPS gps;
 SoftwareSerial nss(3, 2);
@@ -21,16 +22,6 @@ void setup()
 {
   Serial.begin(9600);
   nss.begin(9600);
-  /*
-  Serial.print("Testing TinyGPS library v. "); Serial.println(TinyGPS::library_version());
-  Serial.println("by Mikal Hart");
-  Serial.println();
-  Serial.print("Sizeof(gpsobject) = "); Serial.println(sizeof(TinyGPS));
-  Serial.println();
-  Serial.println("Sats HDOP Latitude Longitude Fix  Date       Time       Date Alt     Course Speed Card  Distance Course Card  Chars Sentences Checksum");
-  Serial.println("          (deg)    (deg)     Age                        Age  (m)     --- from GPS ----  ---- to London  ----  RX    RX        Fail");
-  Serial.println("--------------------------------------------------------------------------------------------------------------------------------------");
-*/
 }
 
 void loop()
